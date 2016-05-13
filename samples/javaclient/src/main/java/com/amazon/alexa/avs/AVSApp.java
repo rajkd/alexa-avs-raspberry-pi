@@ -56,7 +56,7 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
     private static final Logger log = LoggerFactory.getLogger(AVSApp.class);
 
     //JB dirty hack, paramterize these settings
-    public static boolean DEV_MODE = false;
+    public static boolean DEV_MODE = true;
 
     private static final String APP_TITLE = "Alexa Voice Service";
     private static final String START_LABEL = "Start Listening";
@@ -124,32 +124,6 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
         controller.startHandlingDirectives();
     }
 
-/*    public void onSuccessfulTrigger() {
-        if (controller.isSpeaking() || controller.isPlaying()) {
-            return;
-        }
-
-        this.transcriber.stopRecognition();
-
-        RequestListener requestListener = new RequestListener() {
-            @Override
-            public void onRequestSuccess() {
-                finishProcessing();
-            }
-
-            @Override
-            public void onRequestError(Throwable e) {
-                log.error("An error occured creating speech request", e);
-                JOptionPane.showMessageDialog(getContentPane(), e.getMessage(), "Error",
-                        JOptionPane.ERROR_MESSAGE);
-                finishProcessing();
-            }
-        };
-
-        final RecordingRMSListener rmsListener = this;
-        this.controller.startRecording(rmsListener, requestListener);
-    }*/
-    
     private String getAppVersion() {
         final Properties properties = new Properties();
         try (final InputStream stream = getClass().getResourceAsStream("/res/version.properties")) {
@@ -221,7 +195,7 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
         actionButton = new JButton(START_LABEL);
         actionButton.setEnabled(true);
         
-		final GpioController gpio = GpioFactory.getInstance();
+/*		final GpioController gpio = GpioFactory.getInstance();
 
         final GpioPinDigitalInput myButton = gpio.provisionDigitalInputPin(RaspiPin.GPIO_02, PinPullResistance.PULL_DOWN);
         myButton.addListener(new GpioPinListenerDigital() {
@@ -229,7 +203,7 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
             public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event){
                 actionButton.doClick();
             }
-        });
+        });*/
         
         this.transcriber = new Transcriber();
         transcriber.addListener(new TranscriberListener() {
@@ -239,6 +213,7 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
 			}
 		});
         this.transcriber.startRecognition();
+        this.transcriber.start();
         
         actionButton.addActionListener(new ActionListener() {
             @Override

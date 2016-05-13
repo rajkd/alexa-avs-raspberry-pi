@@ -53,11 +53,9 @@ public class Transcriber extends Thread {
     public void addListener(final TranscriberListener listener){
     	this.transcriberListener = listener;
     }
-
-    public void startRecognition() {
-        this.transcriberEnabled = true;
-        recognizer.startRecognition(true);
-
+    
+    @Override
+    public void run() {
         while (this.transcriberEnabled) {
             String utterance = recognizer.getResult().getHypothesis();
             for (String triggerWord : triggerWords) {
@@ -66,6 +64,11 @@ public class Transcriber extends Thread {
                 }
             }
         }
+    }
+    
+    public void startRecognition() {
+    	this.transcriberEnabled = true;
+    	recognizer.startRecognition(true);
     }
 
     public void stopRecognition() {

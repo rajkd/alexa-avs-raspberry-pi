@@ -2,6 +2,6 @@
 
 grammar start;
 
-<initiation_command> = skywalker;
+<initiation_command> = alexa;
 
 public <command> = <initiation_command>;
