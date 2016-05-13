@@ -13,6 +13,7 @@
     </Appenders>
     <Loggers>
         <Logger name="org.eclipse.jetty" level="info" additivity="false" />
+        <Logger name="edu.cmu.sphinx" level="info" additivity="false" />
         <!-- InputStreamResponseListener is a copy from Jetty at the moment, so give it the same log levels as Jetty -->
         <Logger name="com.amazon.alexa.avs.http.jetty.InputStreamResponseListener" level="info" additivity="false" />
         <Root level="debug">

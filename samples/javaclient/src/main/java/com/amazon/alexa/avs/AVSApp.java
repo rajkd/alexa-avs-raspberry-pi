@@ -195,7 +195,7 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
         actionButton = new JButton(START_LABEL);
         actionButton.setEnabled(true);
         
-/*		final GpioController gpio = GpioFactory.getInstance();
+		final GpioController gpio = GpioFactory.getInstance();
 
         final GpioPinDigitalInput myButton = gpio.provisionDigitalInputPin(RaspiPin.GPIO_02, PinPullResistance.PULL_DOWN);
         myButton.addListener(new GpioPinListenerDigital() {
@@ -203,7 +203,7 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
             public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event){
                 actionButton.doClick();
             }
-        });*/
+        });
         
         this.transcriber = new Transcriber();
         transcriber.addListener(new TranscriberListener() {
