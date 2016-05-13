@@ -28,6 +28,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+import com.pi4j.io.gpio.GpioController;
+import com.pi4j.io.gpio.GpioFactory;
+import com.pi4j.io.gpio.GpioPinDigitalInput;
+import com.pi4j.io.gpio.PinPullResistance;
+import com.pi4j.io.gpio.RaspiPin;
+import com.pi4j.io.gpio.event.GpioPinDigitalStateChangeEvent;
+import com.pi4j.io.gpio.event.GpioPinListenerDigital;
+
 import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -177,6 +185,17 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
         final RecordingRMSListener rmsListener = this;
         actionButton = new JButton(START_LABEL);
         actionButton.setEnabled(true);
+        
+		final GpioController gpio = GpioFactory.getInstance();
+
+        final GpioPinDigitalInput myButton = gpio.provisionDigitalInputPin(RaspiPin.GPIO_02, PinPullResistance.PULL_DOWN);
+        myButton.addListener(new GpioPinListenerDigital() {
+            @Override
+            public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event){
+                actionButton.doClick();
+            }
+        });
+        
         actionButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
