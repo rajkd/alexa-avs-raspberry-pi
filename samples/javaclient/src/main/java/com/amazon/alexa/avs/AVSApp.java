@@ -56,7 +56,7 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
     private static final Logger log = LoggerFactory.getLogger(AVSApp.class);
 
     //JB dirty hack, paramterize these settings
-    public static boolean DEV_MODE = true;
+    public static boolean DEV_MODE = false;
 
     private static final String APP_TITLE = "Alexa Voice Service";
     private static final String START_LABEL = "Start Listening";
@@ -122,6 +122,19 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
         setSize(400, 200);
         setVisible(true);
         controller.startHandlingDirectives();
+        
+        this.transcriber = new Transcriber();
+        transcriber.addListener(new TranscriberListener() {
+			@Override
+			public void onSuccessfulTrigger() {
+		        if (controller.isSpeaking() || controller.isPlaying()) {
+		            return;
+		        }				
+				actionButton.doClick();
+			}
+		});
+        this.transcriber.startRecognition();
+        
     }
 
     private String getAppVersion() {
@@ -204,16 +217,6 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
                 actionButton.doClick();
             }
         });
-        
-        this.transcriber = new Transcriber();
-        transcriber.addListener(new TranscriberListener() {
-			@Override
-			public void onSuccessfulTrigger() {
-				actionButton.doClick();
-			}
-		});
-        this.transcriber.startRecognition();
-        this.transcriber.start();
         
         actionButton.addActionListener(new ActionListener() {
             @Override
@@ -324,7 +327,15 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
         transcriber.startRecognition();
         visualizer.setIndeterminate(false);
         controller.processingFinished();
-
+        
+        while (controller.isSpeaking() || controller.isPlaying()) {}
+		new java.util.Timer().schedule(new java.util.TimerTask() {
+			@Override
+			public void run() {
+				while (controller.isSpeaking() || controller.isPlaying()) {}
+				transcriber.startRecognition();
+			}
+		}, 6000);       
     }
 
     @Override

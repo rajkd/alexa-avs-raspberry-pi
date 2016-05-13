@@ -69,6 +69,7 @@ public class Transcriber extends Thread {
     public void startRecognition() {
     	this.transcriberEnabled = true;
     	recognizer.startRecognition(true);
+    	this.run();
     }
 
     public void stopRecognition() {
