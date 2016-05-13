@@ -14,6 +14,8 @@ import com.amazon.alexa.avs.auth.companionservice.RegCodeDisplayHandler;
 import com.amazon.alexa.avs.config.DeviceConfig;
 import com.amazon.alexa.avs.config.DeviceConfigUtils;
 import com.amazon.alexa.avs.http.AVSClientFactory;
+import com.amazon.alexa.avs.speech.Transcriber;
+import com.amazon.alexa.avs.speech.TranscriberListener;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +55,9 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
 
     private static final Logger log = LoggerFactory.getLogger(AVSApp.class);
 
+    //JB dirty hack, paramterize these settings
+    public static boolean DEV_MODE = false;
+
     private static final String APP_TITLE = "Alexa Voice Service";
     private static final String START_LABEL = "Start Listening";
     private static final String STOP_LABEL = "Stop Listening";
@@ -66,6 +71,7 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
     private JButton playPauseButton;
     private JTextField tokenTextField;
     private JProgressBar visualizer;
+    private Transcriber transcriber;
     private Thread autoEndpoint = null; // used to auto-endpoint while listening
     private final DeviceConfig deviceConfig;
     // minimum audio level threshold under which is considered silence
@@ -96,10 +102,13 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
         controller = new AVSController(this, new AVSAudioPlayerFactory(), new AlertManagerFactory(),
                 getAVSClientFactory(deviceConfig), DialogRequestIdAuthority.getInstance());
 
-        authSetup = new AuthSetup(config, this);
-        authSetup.addAccessTokenListener(this);
-        authSetup.addAccessTokenListener(controller);
-        authSetup.startProvisioningThread();
+        //JB dirty hack, paramterize these settings
+        if (!DEV_MODE) {
+            authSetup = new AuthSetup(config, this);
+            authSetup.addAccessTokenListener(this);
+            authSetup.addAccessTokenListener(controller);
+            authSetup.startProvisioningThread();
+        }
 
         addDeviceField();
         addTokenField();
@@ -115,6 +124,32 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
         controller.startHandlingDirectives();
     }
 
+/*    public void onSuccessfulTrigger() {
+        if (controller.isSpeaking() || controller.isPlaying()) {
+            return;
+        }
+
+        this.transcriber.stopRecognition();
+
+        RequestListener requestListener = new RequestListener() {
+            @Override
+            public void onRequestSuccess() {
+                finishProcessing();
+            }
+
+            @Override
+            public void onRequestError(Throwable e) {
+                log.error("An error occured creating speech request", e);
+                JOptionPane.showMessageDialog(getContentPane(), e.getMessage(), "Error",
+                        JOptionPane.ERROR_MESSAGE);
+                finishProcessing();
+            }
+        };
+
+        final RecordingRMSListener rmsListener = this;
+        this.controller.startRecording(rmsListener, requestListener);
+    }*/
+    
     private String getAppVersion() {
         final Properties properties = new Properties();
         try (final InputStream stream = getClass().getResourceAsStream("/res/version.properties")) {
@@ -196,9 +231,20 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
             }
         });
         
+        this.transcriber = new Transcriber();
+        transcriber.addListener(new TranscriberListener() {
+			@Override
+			public void onSuccessfulTrigger() {
+				actionButton.doClick();
+			}
+		});
+        this.transcriber.startRecognition();
+        
         actionButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+            	if(transcriber.isListening())
+            		transcriber.stopRecognition();
                 controller.onUserActivity();
                 if (actionButton.getText().equals(START_LABEL)) { // if in idle mode
                     actionButton.setText(STOP_LABEL);
@@ -300,6 +346,7 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
     public void finishProcessing() {
         actionButton.setText(START_LABEL);
         actionButton.setEnabled(true);
+        transcriber.startRecognition();
         visualizer.setIndeterminate(false);
         controller.processingFinished();
 
