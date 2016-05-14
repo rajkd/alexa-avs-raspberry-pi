@@ -14,6 +14,7 @@ package edu.cmu.sphinx.api;
 import java.io.IOException;
 
 import edu.cmu.sphinx.frontend.util.StreamDataSource;
+import edu.cmu.sphinx.recognizer.Recognizer.State;
 
 
 /**
@@ -45,7 +46,7 @@ public class LiveSpeechRecognizer extends AbstractSpeechRecognizer {
 
         context.getInstance(StreamDataSource.class)
             .setInputStream(microphone.getStream());
-
+        if(recognizer.getState() == State.DEALLOCATED)
         recognizer.allocate();
         microphone.startRecording();
     }
@@ -59,6 +60,7 @@ public class LiveSpeechRecognizer extends AbstractSpeechRecognizer {
      */
     public void stopRecognition() {
         microphone.stopRecording();
-        recognizer.deallocate();
+        if(recognizer.getState() == State.READY)
+        	recognizer.deallocate();
     }
 }
