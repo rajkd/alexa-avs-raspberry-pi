@@ -2,6 +2,8 @@
 var https = require('https');
 var uuid = require('node-uuid');
 var config = require("./config");
+var createIfNotExist = require("create-if-not-exist");
+var fs = require("fs");
 
 var auth = {};
 
@@ -20,6 +22,29 @@ var UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[
 
 var oAuthServer = 'https://' + config.lwaRedirectHost + '/ap/oa';
 var lwaProdAuthUrl = oAuthServer + '?client_id=' + config.clientId + '&response_type=code&redirect_uri=' + config.redirectUrl;
+
+var sessionIdToRefreshToken = loadJSONfile("./tokens.json");
+sessionIds = Object.keys(sessionIdToRefreshToken);
+
+function loadJSONfile (filename, encoding) {
+	try {
+		// default encoding is utf8
+		if (typeof (encoding) == 'undefined') encoding = 'utf-8';
+		
+		// read file synchroneously
+		var contents = fs.readFileSync(filename, encoding);
+
+		// parse contents as JSON
+		return JSON.parse(contents);
+		
+	} catch (err) {
+		// an error occurred
+		console.log("Error Occured" + err);
+		return {};
+	} finally{
+		
+	}
+} // loadJSONfile
 
 /**
  * Create an error object to return to the user.
@@ -292,6 +317,7 @@ auth.authresponse = function (authCode, stateCode, callback) {
                 var result = JSON.parse(resultBuffer);
                 
                 sessionIdToRefreshToken[sessionId] = result.refresh_token;
+				fs.writeFileSync('./tokens.json', JSON.stringify(sessionIdToRefreshToken) , 'utf-8');
                 callback(null, "device tokens ready");
             } else {
                 callback(error('TokenRetrievalFailure', 'Unexpected failure while retrieving tokens.', res.statusCode));
