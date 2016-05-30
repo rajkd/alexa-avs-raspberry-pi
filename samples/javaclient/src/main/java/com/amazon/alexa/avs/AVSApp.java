@@ -34,6 +34,7 @@ import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioFactory;
 import com.pi4j.io.gpio.GpioPinDigitalInput;
 import com.pi4j.io.gpio.PinPullResistance;
+import com.pi4j.io.gpio.PinState;
 import com.pi4j.io.gpio.RaspiPin;
 import com.pi4j.io.gpio.event.GpioPinDigitalStateChangeEvent;
 import com.pi4j.io.gpio.event.GpioPinListenerDigital;
@@ -54,9 +55,6 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
         RegCodeDisplayHandler, AccessTokenListener {
 
     private static final Logger log = LoggerFactory.getLogger(AVSApp.class);
-
-    //JB dirty hack, paramterize these settings
-    public static boolean DEV_MODE = false;
 
     private static final String APP_TITLE = "Alexa Voice Service";
     private static final String START_LABEL = "Start Listening";
@@ -102,13 +100,10 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
         controller = new AVSController(this, new AVSAudioPlayerFactory(), new AlertManagerFactory(),
                 getAVSClientFactory(deviceConfig), DialogRequestIdAuthority.getInstance());
 
-        //JB dirty hack, paramterize these settings
-        if (!DEV_MODE) {
-            authSetup = new AuthSetup(config, this);
-            authSetup.addAccessTokenListener(this);
-            authSetup.addAccessTokenListener(controller);
-            authSetup.startProvisioningThread();
-        }
+        authSetup = new AuthSetup(config, this);
+        authSetup.addAccessTokenListener(this);
+        authSetup.addAccessTokenListener(controller);
+        authSetup.startProvisioningThread();
 
         addDeviceField();
         addTokenField();
@@ -123,6 +118,8 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
         setVisible(true);
         controller.startHandlingDirectives();
         
+        
+        
         this.transcriber = new Transcriber();
         transcriber.addListener(new TranscriberListener() {
 			@Override
@@ -136,6 +133,44 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
         this.transcriber.startRecognition();
         
     }
+    
+/*    private void addGPIOListener(){
+        final RecordingRMSListener rmsListener = this;
+		final GpioController gpio = GpioFactory.getInstance();
+
+        final GpioPinDigitalInput myButton = gpio.provisionDigitalInputPin(RaspiPin.GPIO_02, PinPullResistance.PULL_DOWN);
+        myButton.addListener(new GpioPinListenerDigital() {
+            @Override
+            public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event){
+                controller.onUserActivity();
+            	if(event.getState().equals(PinState.HIGH)){
+                    RequestListener requestListener = new RequestListener() {
+
+                        @Override
+                        public void onRequestSuccess() {
+                            finishProcessing();
+                        }
+
+                        @Override
+                        public void onRequestError(Throwable e) {
+                            log.error("An error occured creating speech request", e);
+                            JOptionPane.showMessageDialog(getContentPane(), e.getMessage(), "Error",
+                                    JOptionPane.ERROR_MESSAGE);
+                            actionButton.doClick();
+                            finishProcessing();
+                        }
+                    };
+
+                    controller.startRecording(rmsListener, requestListener);
+                } else { // else we must already be in listening
+                    actionButton.setText(PROCESSING_LABEL); // go into processing mode
+                    actionButton.setEnabled(false);
+                    visualizer.setIndeterminate(true);
+                    controller.stopRecording(); // stop the recording so the request can complete
+                }               
+            }
+        });    	
+    }*/
 
     private String getAppVersion() {
         final Properties properties = new Properties();
@@ -207,16 +242,6 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
         final RecordingRMSListener rmsListener = this;
         actionButton = new JButton(START_LABEL);
         actionButton.setEnabled(true);
-        
-		final GpioController gpio = GpioFactory.getInstance();
-
-        final GpioPinDigitalInput myButton = gpio.provisionDigitalInputPin(RaspiPin.GPIO_02, PinPullResistance.PULL_DOWN);
-        myButton.addListener(new GpioPinListenerDigital() {
-            @Override
-            public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event){
-                actionButton.doClick();
-            }
-        });
         
         actionButton.addActionListener(new ActionListener() {
             @Override
