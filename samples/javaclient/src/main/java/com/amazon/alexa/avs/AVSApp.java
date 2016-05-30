@@ -8,18 +8,6 @@
  */
 package com.amazon.alexa.avs;
 
-import com.amazon.alexa.avs.auth.AccessTokenListener;
-import com.amazon.alexa.avs.auth.AuthSetup;
-import com.amazon.alexa.avs.auth.companionservice.RegCodeDisplayHandler;
-import com.amazon.alexa.avs.config.DeviceConfig;
-import com.amazon.alexa.avs.config.DeviceConfigUtils;
-import com.amazon.alexa.avs.http.AVSClientFactory;
-import com.amazon.alexa.avs.speech.Transcriber;
-import com.amazon.alexa.avs.speech.TranscriberListener;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -29,14 +17,6 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
-
-import com.pi4j.io.gpio.GpioController;
-import com.pi4j.io.gpio.GpioFactory;
-import com.pi4j.io.gpio.GpioPinDigitalInput;
-import com.pi4j.io.gpio.PinPullResistance;
-import com.pi4j.io.gpio.RaspiPin;
-import com.pi4j.io.gpio.event.GpioPinDigitalStateChangeEvent;
-import com.pi4j.io.gpio.event.GpioPinListenerDigital;
 
 import javax.swing.Box;
 import javax.swing.JButton;
@@ -49,9 +29,21 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingWorker;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.amazon.alexa.avs.auth.AccessTokenListener;
+import com.amazon.alexa.avs.auth.AuthSetup;
+import com.amazon.alexa.avs.auth.companionservice.RegCodeDisplayHandler;
+import com.amazon.alexa.avs.config.DeviceConfig;
+import com.amazon.alexa.avs.config.DeviceConfigUtils;
+import com.amazon.alexa.avs.http.AVSClientFactory;
+import com.amazon.alexa.avs.speech.Transcriber;
+import com.amazon.alexa.avs.speech.TranscriberListener;
+
 @SuppressWarnings("serial")
 public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMSListener,
-        RegCodeDisplayHandler, AccessTokenListener {
+        RegCodeDisplayHandler, AccessTokenListener, TranscriberListener {
 
     private static final Logger log = LoggerFactory.getLogger(AVSApp.class);
 
@@ -75,7 +67,7 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
     private Thread autoEndpoint = null; // used to auto-endpoint while listening
     private final DeviceConfig deviceConfig;
     // minimum audio level threshold under which is considered silence
-    private static final int ENDPOINT_THRESHOLD = 5;
+    private static final int ENDPOINT_THRESHOLD = 3;
     private static final int ENDPOINT_SECONDS = 2; // amount of silence time before endpointing
     private String accessToken;
 
@@ -121,20 +113,39 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setSize(400, 200);
         setVisible(true);
+
         controller.startHandlingDirectives();
-        
-        this.transcriber = new Transcriber();
-        transcriber.addListener(new TranscriberListener() {
-			@Override
-			public void onSuccessfulTrigger() {
-		        if (controller.isSpeaking() || controller.isPlaying()) {
-		            return;
-		        }				
-				actionButton.doClick();
-			}
-		});
+
+        final TranscriberListener transcriberListener = this;
+        this.transcriber = new Transcriber(transcriberListener);
         this.transcriber.startRecognition();
-        
+    }
+
+    @Override
+    public void onSuccessfulTrigger() {
+    	System.out.println("CONTROLLER STATUS: " + controller.isSpeaking() + " && " + controller.isPlaying());
+//        if (controller.isSpeaking()) {
+//            return;
+//        }
+        this.transcriber.stopRecognition();
+        controller.onUserActivity();
+
+        RequestListener requestListener = new RequestListener() {
+            @Override
+            public void onRequestSuccess() {
+                finishProcessing();
+            }
+
+            @Override
+            public void onRequestError(Throwable e) {
+                log.error("An error occured creating speech request", e);
+                JOptionPane.showMessageDialog(getContentPane(), e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                finishProcessing();
+            }
+        };
+
+        final RecordingRMSListener rmsListener = this;
+        this.controller.startRecording(rmsListener, requestListener);
     }
 
     private String getAppVersion() {
@@ -207,22 +218,9 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
         final RecordingRMSListener rmsListener = this;
         actionButton = new JButton(START_LABEL);
         actionButton.setEnabled(true);
-        
-		final GpioController gpio = GpioFactory.getInstance();
-
-        final GpioPinDigitalInput myButton = gpio.provisionDigitalInputPin(RaspiPin.GPIO_02, PinPullResistance.PULL_DOWN);
-        myButton.addListener(new GpioPinListenerDigital() {
-            @Override
-            public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event){
-                actionButton.doClick();
-            }
-        });
-        
         actionButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-            	if(transcriber.isListening())
-            		transcriber.stopRecognition();
                 controller.onUserActivity();
                 if (actionButton.getText().equals(START_LABEL)) { // if in idle mode
                     actionButton.setText(STOP_LABEL);
@@ -321,21 +319,29 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
         getContentPane().add(container);
     }
 
+    private void stopRecording() {
+        controller.stopRecording();
+    } 
+
     public void finishProcessing() {
         actionButton.setText(START_LABEL);
         actionButton.setEnabled(true);
-        transcriber.startRecognition();
-        visualizer.setIndeterminate(false);
+        visualizer.setIndeterminate(false);    	
         controller.processingFinished();
         
-        while (controller.isSpeaking() || controller.isPlaying()) {}
-		new java.util.Timer().schedule(new java.util.TimerTask() {
-			@Override
-			public void run() {
-				while (controller.isSpeaking() || controller.isPlaying()) {}
-				transcriber.startRecognition();
-			}
-		}, 6000);       
+        //while (controller.isSpeaking() || controller.isPlaying()) {}
+
+        new java.util.Timer().schedule(
+            new java.util.TimerTask() {
+                @Override
+                public void run() {
+                    // while (controller.isSpeaking() || controller.isPlaying()) {}
+                	//while (controller.isSpeaking()) {}
+                    transcriber.startRecognition();
+                }
+            }, 
+            6000
+        );
     }
 
     @Override
@@ -354,8 +360,8 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
                     public void run() {
                         try {
                             Thread.sleep(ENDPOINT_SECONDS * 1000);
-                            actionButton.doClick(); // hit stop if we get through the autoendpoint
-                                                    // time
+                            //actionButton.doClick();
+                            stopRecording();
                         } catch (InterruptedException e) {
                             return;
                         }
@@ -364,7 +370,6 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
                 autoEndpoint.start();
             }
         }
-
         visualizer.setValue(rms); // update the visualizer
     }
 
@@ -384,7 +389,6 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
             }
         };
         thread.start();
-
     }
 
     public void showDialog(String message) {

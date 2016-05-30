@@ -1,19 +1,13 @@
 package com.amazon.alexa.avs.speech;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import edu.cmu.sphinx.api.Configuration;
 import edu.cmu.sphinx.api.LiveSpeechRecognizer;
 
 public class Transcriber extends Thread {
 
-	private static final Logger log = LoggerFactory.getLogger(Transcriber.class);
-	
     private Configuration configuration;
     private LiveSpeechRecognizer recognizer;
     private final ClassLoader resLoader;
@@ -28,7 +22,9 @@ public class Transcriber extends Thread {
     private static final String GRAMMAR_NAME = "start";
     
 
-    public Transcriber() {   
+    public Transcriber(final TranscriberListener listener) throws Exception {   
+        this.transcriberListener = listener;
+
         configuration = new Configuration();
         resLoader = Thread.currentThread().getContextClassLoader();
 
@@ -41,21 +37,15 @@ public class Transcriber extends Thread {
         configuration.setUseGrammar(true);
         configuration.setGrammarName(GRAMMAR_NAME);
 
-        try {
-			recognizer = new LiveSpeechRecognizer(configuration);
-		} catch (IOException e) {
-			log.error("An error occured creating Live Speech Recognizer", e);
-		}
+        recognizer = new LiveSpeechRecognizer(configuration);
 
-        this.triggerWords = Arrays.asList("skywalker", "alexa");
+        this.triggerWords = Arrays.asList("alexa", "skywalker");
     }
-    
-    public void addListener(final TranscriberListener listener){
-    	this.transcriberListener = listener;
-    }
-    
-    @Override
-    public void run() {
+
+    public void startRecognition() {
+        this.transcriberEnabled = true;
+        recognizer.startRecognition(true);
+
         while (this.transcriberEnabled) {
             String utterance = recognizer.getResult().getHypothesis();
             for (String triggerWord : triggerWords) {
@@ -64,12 +54,6 @@ public class Transcriber extends Thread {
                 }
             }
         }
-    }
-    
-    public void startRecognition() {
-    	this.transcriberEnabled = true;
-    	recognizer.startRecognition(true);
-    	this.run();
     }
 
     public void stopRecognition() {
