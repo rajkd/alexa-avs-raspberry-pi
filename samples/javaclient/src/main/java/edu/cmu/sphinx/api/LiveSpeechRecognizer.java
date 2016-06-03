@@ -61,4 +61,15 @@ public class LiveSpeechRecognizer extends AbstractSpeechRecognizer {
         microphone.stopRecording();
         recognizer.deallocate();
     }
+    
+    public void startRecording() {
+        microphone.openInputStream();
+        context.getInstance(StreamDataSource.class)
+            .setInputStream(microphone.getStream());
+    	microphone.startRecording();
+    }
+    
+    public void stopRecording() {
+        microphone.stopRecording();
+    }    
 }

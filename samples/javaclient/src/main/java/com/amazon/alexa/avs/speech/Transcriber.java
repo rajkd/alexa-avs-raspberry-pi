@@ -39,7 +39,7 @@ public class Transcriber extends Thread {
 
         recognizer = new LiveSpeechRecognizer(configuration);
 
-        this.triggerWords = Arrays.asList("alexa", "skywalker");
+        this.triggerWords = Arrays.asList("alexa");
     }
 
     public void startRecognition() {
@@ -48,6 +48,7 @@ public class Transcriber extends Thread {
 
         while (this.transcriberEnabled) {
             String utterance = recognizer.getResult().getHypothesis();
+            System.out.println("######" + utterance);
             for (String triggerWord : triggerWords) {
                 if (utterance.equals(triggerWord)) {
                     this.transcriberListener.onSuccessfulTrigger();
@@ -64,4 +65,24 @@ public class Transcriber extends Thread {
     public boolean isListening() {
         return this.transcriberEnabled;
     }
+
+    public void startRecording() {
+    	this.transcriberEnabled = true;
+    	recognizer.startRecording();
+        while (this.transcriberEnabled) {
+            String utterance = recognizer.getResult().getHypothesis();
+            System.out.println("######" + utterance);
+            for (String triggerWord : triggerWords) {
+                if (utterance.equals(triggerWord)) {
+                    this.transcriberListener.onSuccessfulTrigger();
+                }
+            }
+        }    	
+    }
+    
+    public void stopRecording() {
+    	this.transcriberEnabled = false;
+    	recognizer.stopRecording();
+    }      
+    
 }
