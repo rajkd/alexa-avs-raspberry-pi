@@ -1,0 +1,44 @@
+Language model created by QuickLM on Sat Jun  4 23:30:29 EDT 2016
+Copyright (c) 1996-2010 Carnegie Mellon University and Alexander I. Rudnicky
+
+The model is in standard ARPA format, designed by Doug Paul while he was at MITRE.
+
+The code that was used to produce this language model is available in Open Source.
+Please visit http://www.speech.cs.cmu.edu/tools/ for more information
+
+The (fixed) discount mass is 0.5. The backoffs are computed using the ratio method.
+This model based on a corpus of 4 sentences and 7 words
+
+\data\
+ngram 1=7
+ngram 2=9
+ngram 3=5
+
+\1-grams:
+-0.8129 </s> -0.3010
+-0.8129 <s> -0.2285
+-1.4150 ALEXA -0.2285
+-1.4150 ECHO -0.2285
+-1.4150 OKAY -0.2840
+-1.4150 PI -0.2285
+-1.4150 SKYWALKER -0.2285
+
+\2-grams:
+-0.9031 <s> ALEXA 0.0000
+-0.9031 <s> ECHO 0.0000
+-0.9031 <s> OKAY 0.0000
+-0.9031 <s> SKYWALKER 0.0000
+-0.3010 ALEXA </s> -0.3010
+-0.3010 ECHO </s> -0.3010
+-0.3010 OKAY PI 0.0000
+-0.3010 PI </s> -0.3010
+-0.3010 SKYWALKER </s> -0.3010
+
+\3-grams:
+-0.3010 <s> ALEXA </s>
+-0.3010 <s> ECHO </s>
+-0.3010 <s> OKAY PI
+-0.3010 <s> SKYWALKER </s>
+-0.3010 OKAY PI </s>
+
+\end\

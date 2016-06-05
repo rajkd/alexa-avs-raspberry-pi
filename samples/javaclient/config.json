@@ -1,17 +1,19 @@
 {
-    "productId":"",
-    "dsn":"",
-    "provisioningMethod":"",
+    "productId":"RaspberryEcho",
+    "dsn":"123456",
+    "provisioningMethod":"companionService",
+    "avsHost":"https://avs-alexa-na.amazon.com",
     "companionApp":{
         "localPort":8443,
-        "sslKeyStore":"",
-        "sslKeyStorePassphrase":"",
-        "lwaUrl":"https://api.amazon.com"
+        "lwaUrl":"https://api.amazon.com",
+        "sslKeyStore":"/Users/rajkumar/git/alexa-avs-raspberry-pi/samples/javaclient/certs/server/jetty.pkcs12",
+        "sslKeyStorePassphrase":"talktome"
     },
     "companionService":{
         "serviceUrl":"https://localhost:3000",
-        "sslClientKeyStore":"",
-        "sslClientKeyStorePassphrase":"",
-        "sslCaCert":""
+        "sslClientKeyStore":"/Users/rajkumar/git/alexa-avs-raspberry-pi/samples/javaclient/certs/server/jetty.pkcs12",
+        "sslClientKeyStorePassphrase":"talktome",
+        "sslCaCert":"/Users/rajkumar/git/alexa-avs-raspberry-pi/samples/javaclient/certs/ca/ca.crt",
+        "sessionId":"714cdec1-5ffc-480a-ac67-e0ccf0adcd8f"
     }
 }

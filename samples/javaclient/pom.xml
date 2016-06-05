@@ -191,9 +191,10 @@
         <includes>
           <include>**/*.mp3</include>
           <include>**/*.wav</include>
-          <include>**/*.lm.bin</include>
+          <include>**/*.lm</include>
           <include>**/*.en-us</include>
           <include>**/*.dict</include>
+          <include>**/*.xml</include>
           <include>**/en-us/**</include>
           <include>**/dialog/**</include>
         </includes>

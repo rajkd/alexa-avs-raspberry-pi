@@ -15,10 +15,10 @@ public class Transcriber extends Thread {
     private boolean transcriberEnabled = false;
     private List<String> triggerWords;
 
-    private static final String ACOUSTIC_MODEL = "res/en-us/";
-    private static final String DICTIONARY_PATH = "res/cmudict-en-us.dict";
-    private static final String GRAMMAR_PATH = "res/dialog/";
-    private static final String LANGUAGE_MODEL = "res/en-us.lm.bin";
+    private static final String ACOUSTIC_MODEL = "resource:/edu/cmu/sphinx/models/en-us/en-us";
+    private static final String DICTIONARY_PATH = "resource:/res/cmudict-en-us.dict";
+    private static final String GRAMMAR_PATH = "resource:/res/dialog/";
+    private static final String LANGUAGE_MODEL = "resource:/res/en-us.lm";
     private static final String GRAMMAR_NAME = "start";
     
 
@@ -30,10 +30,10 @@ public class Transcriber extends Thread {
 
         //URL url = resLoader.getResource(GRAMMAR_PATH);
     
-        configuration.setAcousticModelPath(resLoader.getResource(ACOUSTIC_MODEL).toString());
-        configuration.setDictionaryPath(resLoader.getResource(DICTIONARY_PATH).toString());
-        configuration.setLanguageModelPath(resLoader.getResource(LANGUAGE_MODEL).toString());
-        configuration.setGrammarPath(resLoader.getResource(GRAMMAR_PATH).toString());
+        configuration.setAcousticModelPath(ACOUSTIC_MODEL);
+        configuration.setDictionaryPath(DICTIONARY_PATH);
+        configuration.setLanguageModelPath(LANGUAGE_MODEL);
+        configuration.setGrammarPath(GRAMMAR_PATH);
         configuration.setUseGrammar(true);
         configuration.setGrammarName(GRAMMAR_NAME);
 
@@ -66,7 +66,7 @@ public class Transcriber extends Thread {
         return this.transcriberEnabled;
     }
 
-    public void startRecording() {
+/*    public void startRecording() {
     	this.transcriberEnabled = true;
     	recognizer.startRecording();
         while (this.transcriberEnabled) {
@@ -83,6 +83,6 @@ public class Transcriber extends Thread {
     public void stopRecording() {
     	this.transcriberEnabled = false;
     	recognizer.stopRecording();
-    }      
+    }*/      
     
 }
