@@ -1,7 +1,0 @@
-#JSGF V1.0;
-
-grammar start;
-
-<initiation_command> = alexa;
-
-public <command> = <initiation_command>;

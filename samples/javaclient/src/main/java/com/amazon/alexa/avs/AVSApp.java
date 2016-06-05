@@ -8,28 +8,15 @@
  */
 package com.amazon.alexa.avs;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.amazon.alexa.avs.auth.AccessTokenListener;
 import com.amazon.alexa.avs.auth.AuthSetup;
 import com.amazon.alexa.avs.auth.companionservice.RegCodeDisplayHandler;
 import com.amazon.alexa.avs.config.DeviceConfig;
 import com.amazon.alexa.avs.config.DeviceConfigUtils;
 import com.amazon.alexa.avs.http.AVSClientFactory;
-import com.amazon.alexa.avs.speech.Transcriber;
-import com.amazon.alexa.avs.speech.TranscriberListener;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Font;
-import java.awt.GridLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
-
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioFactory;
 import com.pi4j.io.gpio.GpioPinDigitalInput;
@@ -39,43 +26,22 @@ import com.pi4j.io.gpio.RaspiPin;
 import com.pi4j.io.gpio.event.GpioPinDigitalStateChangeEvent;
 import com.pi4j.io.gpio.event.GpioPinListenerDigital;
 
-import javax.swing.Box;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JProgressBar;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.SwingWorker;
-
-@SuppressWarnings("serial")
-public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMSListener,
+public class AVSApp implements ExpectSpeechListener, RecordingRMSListener,
         RegCodeDisplayHandler, AccessTokenListener {
 
     private static final Logger log = LoggerFactory.getLogger(AVSApp.class);
 
-    private static final String APP_TITLE = "Alexa Voice Service";
-    private static final String START_LABEL = "Start Listening";
-    private static final String STOP_LABEL = "Stop Listening";
-    private static final String PROCESSING_LABEL = "Processing";
-    private static final String PREVIOUS_LABEL = "\u21E4";
-    private static final String NEXT_LABEL = "\u21E5";
-    private static final String PAUSE_LABEL = "\u275A\u275A";
-    private static final String PLAY_LABEL = "\u25B6";
+    //JB dirty hack, paramterize these settings
+    public static boolean DEV_MODE = false;
+
+
     private final AVSController controller;
-    private JButton actionButton;
-    private JButton playPauseButton;
-    private JTextField tokenTextField;
-    private JProgressBar visualizer;
-    private Transcriber transcriber;
     private Thread autoEndpoint = null; // used to auto-endpoint while listening
     private final DeviceConfig deviceConfig;
     // minimum audio level threshold under which is considered silence
-    private static final int ENDPOINT_THRESHOLD = 5;
+    private static final int ENDPOINT_THRESHOLD = 3;
     private static final int ENDPOINT_SECONDS = 2; // amount of silence time before endpointing
-    private String accessToken;
+
 
     private AuthSetup authSetup;
 
@@ -100,267 +66,67 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
         controller = new AVSController(this, new AVSAudioPlayerFactory(), new AlertManagerFactory(),
                 getAVSClientFactory(deviceConfig), DialogRequestIdAuthority.getInstance());
 
-        authSetup = new AuthSetup(config, this);
-        authSetup.addAccessTokenListener(this);
-        authSetup.addAccessTokenListener(controller);
-        authSetup.startProvisioningThread();
+        //JB dirty hack, paramterize these settings
+        if (!DEV_MODE) {
+            authSetup = new AuthSetup(config, this);
+            authSetup.addAccessTokenListener(this);
+            authSetup.addAccessTokenListener(controller);
+            authSetup.startProvisioningThread();
+        }
 
-        addDeviceField();
-        addTokenField();
-        addVisualizerField();
-        addActionField();
-        addPlaybackButtons();
-
-        getContentPane().setLayout(new GridLayout(0, 1));
-        setTitle(getAppTitle());
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(400, 200);
-        setVisible(true);
         controller.startHandlingDirectives();
-        
-        
-        
-        this.transcriber = new Transcriber();
-        transcriber.addListener(new TranscriberListener() {
-			@Override
-			public void onSuccessfulTrigger() {
-		        if (controller.isSpeaking() || controller.isPlaying()) {
-		            return;
-		        }				
-				actionButton.doClick();
-			}
-		});
-        this.transcriber.startRecognition();
-        
+        addGPIOListener();
+
+    }
+
+    public void onSuccessfulTrigger() {
+        controller.onUserActivity();
+
+        RequestListener requestListener = new RequestListener() {
+            @Override
+            public void onRequestSuccess() {
+                finishProcessing();
+            }
+
+            @Override
+            public void onRequestError(Throwable e) {
+                log.error("An error occured creating speech request", e);
+                finishProcessing();
+            }
+        };
+
+        final RecordingRMSListener rmsListener = this;
+        this.controller.startRecording(rmsListener, requestListener);
     }
     
-/*    private void addGPIOListener(){
-        final RecordingRMSListener rmsListener = this;
+	private void addGPIOListener() {
 		final GpioController gpio = GpioFactory.getInstance();
 
-        final GpioPinDigitalInput myButton = gpio.provisionDigitalInputPin(RaspiPin.GPIO_02, PinPullResistance.PULL_DOWN);
-        myButton.addListener(new GpioPinListenerDigital() {
-            @Override
-            public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event){
-                controller.onUserActivity();
-            	if(event.getState().equals(PinState.HIGH)){
-                    RequestListener requestListener = new RequestListener() {
-
-                        @Override
-                        public void onRequestSuccess() {
-                            finishProcessing();
-                        }
-
-                        @Override
-                        public void onRequestError(Throwable e) {
-                            log.error("An error occured creating speech request", e);
-                            JOptionPane.showMessageDialog(getContentPane(), e.getMessage(), "Error",
-                                    JOptionPane.ERROR_MESSAGE);
-                            actionButton.doClick();
-                            finishProcessing();
-                        }
-                    };
-
-                    controller.startRecording(rmsListener, requestListener);
-                } else { // else we must already be in listening
-                    actionButton.setText(PROCESSING_LABEL); // go into processing mode
-                    actionButton.setEnabled(false);
-                    visualizer.setIndeterminate(true);
-                    controller.stopRecording(); // stop the recording so the request can complete
-                }               
-            }
-        });    	
-    }*/
-
-    private String getAppVersion() {
-        final Properties properties = new Properties();
-        try (final InputStream stream = getClass().getResourceAsStream("/res/version.properties")) {
-            properties.load(stream);
-            if (properties.containsKey("version")) {
-                return properties.getProperty("version");
-            }
-        } catch (IOException e) {
-            log.warn("version.properties file not found on classpath");
-        }
-        return null;
-    }
-
-    private String getAppTitle() {
-        String version = getAppVersion();
-        String title = APP_TITLE;
-        if (version != null) {
-            title += " - v" + version;
-        }
-        return title;
-    }
+		final GpioPinDigitalInput myButton = gpio.provisionDigitalInputPin(RaspiPin.GPIO_02, PinPullResistance.PULL_DOWN);
+		myButton.addListener(new GpioPinListenerDigital() {
+			@Override
+			public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event) {
+				if (event.getState().equals(PinState.HIGH)) {
+					onSuccessfulTrigger();
+				} else { // else we must already be in listening
+					controller.stopRecording(); // stop the recording so the
+												// request can complete
+				}
+			}
+		});
+	} 
 
     protected AVSClientFactory getAVSClientFactory(DeviceConfig config) {
         return new AVSClientFactory(config);
     }
 
-    private void addDeviceField() {
-        JLabel productIdLabel = new JLabel(deviceConfig.getProductId());
-        JLabel dsnLabel = new JLabel(deviceConfig.getDsn());
-        productIdLabel.setFont(productIdLabel.getFont().deriveFont(Font.PLAIN));
-        dsnLabel.setFont(dsnLabel.getFont().deriveFont(Font.PLAIN));
 
-        FlowLayout flowLayout = new FlowLayout(FlowLayout.LEFT);
-        flowLayout.setHgap(0);
-        JPanel devicePanel = new JPanel(flowLayout);
-        devicePanel.add(new JLabel("Device: "));
-        devicePanel.add(productIdLabel);
-        devicePanel.add(Box.createRigidArea(new Dimension(5, 0)));
-        devicePanel.add(new JLabel("DSN: "));
-        devicePanel.add(dsnLabel);
-        getContentPane().add(devicePanel);
-    }
-
-    private void addTokenField() {
-        getContentPane().add(new JLabel("Bearer Token:"));
-        tokenTextField = new JTextField(50);
-        tokenTextField.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                controller.onUserActivity();
-                authSetup.onAccessTokenReceived(tokenTextField.getText());
-            }
-        });
-        getContentPane().add(tokenTextField);
-
-        if (accessToken != null) {
-            tokenTextField.setText(accessToken);
-            accessToken = null;
-        }
-    }
-
-    private void addVisualizerField() {
-        visualizer = new JProgressBar(0, 100);
-        getContentPane().add(visualizer);
-    }
-
-    private void addActionField() {
-        final RecordingRMSListener rmsListener = this;
-        actionButton = new JButton(START_LABEL);
-        actionButton.setEnabled(true);
-        
-        actionButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-            	if(transcriber.isListening())
-            		transcriber.stopRecognition();
-                controller.onUserActivity();
-                if (actionButton.getText().equals(START_LABEL)) { // if in idle mode
-                    actionButton.setText(STOP_LABEL);
-
-                    RequestListener requestListener = new RequestListener() {
-
-                        @Override
-                        public void onRequestSuccess() {
-                            finishProcessing();
-                        }
-
-                        @Override
-                        public void onRequestError(Throwable e) {
-                            log.error("An error occured creating speech request", e);
-                            JOptionPane.showMessageDialog(getContentPane(), e.getMessage(), "Error",
-                                    JOptionPane.ERROR_MESSAGE);
-                            actionButton.doClick();
-                            finishProcessing();
-                        }
-                    };
-
-                    controller.startRecording(rmsListener, requestListener);
-                } else { // else we must already be in listening
-                    actionButton.setText(PROCESSING_LABEL); // go into processing mode
-                    actionButton.setEnabled(false);
-                    visualizer.setIndeterminate(true);
-                    controller.stopRecording(); // stop the recording so the request can complete
-                }
-            }
-        });
-
-        getContentPane().add(actionButton);
-    }
-
-    /**
-     * Respond to a music button press event
-     *
-     * @param action
-     *            Playback action to handle
-     */
-    private void musicButtonPressedEventHandler(final PlaybackAction action) {
-        SwingWorker<Void, Void> alexaCall = new SwingWorker<Void, Void>() {
-            @Override
-            public Void doInBackground() throws Exception {
-                visualizer.setIndeterminate(true);
-                controller.handlePlaybackAction(action);
-                return null;
-            }
-
-            @Override
-            public void done() {
-                visualizer.setIndeterminate(false);
-            }
-        };
-        alexaCall.execute();
-    }
-
-    private void createMusicButton(JPanel container, String label, final PlaybackAction action) {
-        JButton button = new JButton(label);
-        button.setEnabled(true);
-        button.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                controller.onUserActivity();
-                musicButtonPressedEventHandler(action);
-            }
-        });
-        container.add(button);
-    }
-
-    /**
-     * Add music control buttons
-     */
-    private void addPlaybackButtons() {
-        JPanel container = new JPanel();
-        container.setLayout(new GridLayout(1, 5));
-
-        playPauseButton = new JButton(PLAY_LABEL + "/" + PAUSE_LABEL);
-        playPauseButton.setEnabled(true);
-        playPauseButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                controller.onUserActivity();
-                if (controller.isPlaying()) {
-                    musicButtonPressedEventHandler(PlaybackAction.PAUSE);
-                } else {
-                    musicButtonPressedEventHandler(PlaybackAction.PLAY);
-                }
-            }
-        });
-
-        createMusicButton(container, PREVIOUS_LABEL, PlaybackAction.PREVIOUS);
-        container.add(playPauseButton);
-
-        createMusicButton(container, NEXT_LABEL, PlaybackAction.NEXT);
-        getContentPane().add(container);
-    }
+    private void stopRecording() {
+        controller.stopRecording();
+    } 
 
     public void finishProcessing() {
-        actionButton.setText(START_LABEL);
-        actionButton.setEnabled(true);
-        transcriber.startRecognition();
-        visualizer.setIndeterminate(false);
         controller.processingFinished();
-        
-        while (controller.isSpeaking() || controller.isPlaying()) {}
-		new java.util.Timer().schedule(new java.util.TimerTask() {
-			@Override
-			public void run() {
-				while (controller.isSpeaking() || controller.isPlaying()) {}
-				transcriber.startRecognition();
-			}
-		}, 6000);       
     }
 
     @Override
@@ -379,8 +145,7 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
                     public void run() {
                         try {
                             Thread.sleep(ENDPOINT_SECONDS * 1000);
-                            actionButton.doClick(); // hit stop if we get through the autoendpoint
-                                                    // time
+                            stopRecording();
                         } catch (InterruptedException e) {
                             return;
                         }
@@ -389,8 +154,6 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
                 autoEndpoint.start();
             }
         }
-
-        visualizer.setValue(rms); // update the visualizer
     }
 
     @Override
@@ -398,43 +161,33 @@ public class AVSApp extends JFrame implements ExpectSpeechListener, RecordingRMS
         Thread thread = new Thread() {
             @Override
             public void run() {
-                while (!actionButton.isEnabled() || !actionButton.getText().equals(START_LABEL)
-                        || controller.isSpeaking()) {
+                while (controller.isSpeaking()) {
                     try {
                         Thread.sleep(500);
                     } catch (Exception e) {
                     }
                 }
-                actionButton.doClick();
+                onSuccessfulTrigger();
             }
         };
         thread.start();
-
-    }
-
-    public void showDialog(String message) {
-        JTextArea textMessage = new JTextArea(message);
-        textMessage.setEditable(false);
-        JOptionPane.showMessageDialog(getContentPane(), textMessage, "Information",
-                JOptionPane.INFORMATION_MESSAGE);
     }
 
     @Override
     public void displayRegCode(String regCode) {
         String regUrl =
                 deviceConfig.getCompanionServiceInfo().getServiceUrl() + "/provision/" + regCode;
-        showDialog("Please register your device by visiting the following website on "
+       /* showDialog("Please register your device by visiting the following website on "
+                + "any system and following the instructions:\n" + regUrl
+                + "\n\n Hit OK once completed.");*/
+        System.out.println("Please register your device by visiting the following website on "
                 + "any system and following the instructions:\n" + regUrl
                 + "\n\n Hit OK once completed.");
     }
 
     @Override
     public synchronized void onAccessTokenReceived(String accessToken) {
-        if (tokenTextField == null) {
-            this.accessToken = accessToken;
-        } else {
-            tokenTextField.setText(accessToken);
-        }
+    	System.out.println("Access Token Received: " + accessToken);
     }
 
 }
