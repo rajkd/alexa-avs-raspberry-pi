@@ -14,7 +14,7 @@ public class Transcriber extends Thread {
     private boolean transcriberEnabled = false;
     private List<String> triggerWords;
 
-    private static final String ACOUSTIC_MODEL = "resource:/edu/cmu/sphinx/models/en-us/en-us";
+    private static final String ACOUSTIC_MODEL = "resource:/res/en-us";
     private static final String DICTIONARY_PATH = "resource:/res/cmudict-en-us.dict";
     private static final String GRAMMAR_PATH = "resource:/res/dialog/";
     private static final String LANGUAGE_MODEL = "resource:/res/en-us.lm";
@@ -65,6 +65,7 @@ public class Transcriber extends Thread {
     	recognizer.startRecording();
         while (this.transcriberEnabled) {
             String utterance = recognizer.getResult().getHypothesis();
+            System.out.println("#####" + utterance);
             for (String triggerWord : triggerWords) {
                 if (utterance.equals(triggerWord)) {
                     this.transcriberListener.onSuccessfulTrigger();
