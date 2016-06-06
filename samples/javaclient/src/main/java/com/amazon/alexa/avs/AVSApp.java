@@ -80,7 +80,7 @@ public class AVSApp implements ExpectSpeechListener, RecordingRMSListener,
     @Override
     public void onSuccessfulTrigger() {
     	if(transcriber.isListening())
-    		transcriber.stopRecognition();
+    		transcriber.stopRecording();
         controller.onUserActivity();
 
         RequestListener requestListener = new RequestListener() {
@@ -111,16 +111,13 @@ public class AVSApp implements ExpectSpeechListener, RecordingRMSListener,
 
     public void finishProcessing() {
         controller.processingFinished();
-        
-        //while (controller.isSpeaking() || controller.isPlaying()) {}
-
         new java.util.Timer().schedule(
             new java.util.TimerTask() {
                 @Override
                 public void run() {
                     // while (controller.isSpeaking() || controller.isPlaying()) {}
                 	while (controller.isSpeaking()){}
-                    transcriber.startRecognition();
+                    transcriber.startRecording();
                 }
             }, 
             500

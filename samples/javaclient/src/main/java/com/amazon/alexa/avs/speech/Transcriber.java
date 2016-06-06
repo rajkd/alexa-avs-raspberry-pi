@@ -10,7 +10,6 @@ public class Transcriber extends Thread {
 
     private Configuration configuration;
     private LiveSpeechRecognizer recognizer;
-    private final ClassLoader resLoader;
     private TranscriberListener transcriberListener;
     private boolean transcriberEnabled = false;
     private List<String> triggerWords;
@@ -26,10 +25,6 @@ public class Transcriber extends Thread {
         this.transcriberListener = listener;
 
         configuration = new Configuration();
-        resLoader = Thread.currentThread().getContextClassLoader();
-
-        //URL url = resLoader.getResource(GRAMMAR_PATH);
-    
         configuration.setAcousticModelPath(ACOUSTIC_MODEL);
         configuration.setDictionaryPath(DICTIONARY_PATH);
         configuration.setLanguageModelPath(LANGUAGE_MODEL);
@@ -48,7 +43,6 @@ public class Transcriber extends Thread {
 
         while (this.transcriberEnabled) {
             String utterance = recognizer.getResult().getHypothesis();
-            System.out.println("######" + utterance);
             for (String triggerWord : triggerWords) {
                 if (utterance.equals(triggerWord)) {
                     this.transcriberListener.onSuccessfulTrigger();
@@ -66,12 +60,11 @@ public class Transcriber extends Thread {
         return this.transcriberEnabled;
     }
 
-/*    public void startRecording() {
+    public void startRecording() {
     	this.transcriberEnabled = true;
     	recognizer.startRecording();
         while (this.transcriberEnabled) {
             String utterance = recognizer.getResult().getHypothesis();
-            System.out.println("######" + utterance);
             for (String triggerWord : triggerWords) {
                 if (utterance.equals(triggerWord)) {
                     this.transcriberListener.onSuccessfulTrigger();
@@ -83,6 +76,6 @@ public class Transcriber extends Thread {
     public void stopRecording() {
     	this.transcriberEnabled = false;
     	recognizer.stopRecording();
-    }*/      
+    }      
     
 }
