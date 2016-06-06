@@ -120,7 +120,7 @@ public class AVSApp implements ExpectSpeechListener, RecordingRMSListener,
                     transcriber.startRecording();
                 }
             }, 
-            500
+            1000
         );
     }
 
