@@ -79,25 +79,28 @@ public class AVSApp implements ExpectSpeechListener, RecordingRMSListener,
 
     @Override
     public void onSuccessfulTrigger() {
-    	if(transcriber.isListening())
+    	if(transcriber.isListening()){
     		transcriber.stopRecording();
-        controller.onUserActivity();
-
-        RequestListener requestListener = new RequestListener() {
-            @Override
-            public void onRequestSuccess() {
-                finishProcessing();
-            }
-
-            @Override
-            public void onRequestError(Throwable e) {
-                log.error("An error occured creating speech request", e);
-                finishProcessing();
-            }
-        };
-
-        final RecordingRMSListener rmsListener = this;
-        this.controller.startRecording(rmsListener, requestListener);
+	        controller.onUserActivity();
+	
+	        RequestListener requestListener = new RequestListener() {
+	            @Override
+	            public void onRequestSuccess() {
+	                finishProcessing();
+	            }
+	
+	            @Override
+	            public void onRequestError(Throwable e) {
+	                log.error("An error occured creating speech request", e);
+	                finishProcessing();
+	            }
+	        };
+	
+	        final RecordingRMSListener rmsListener = this;
+	        this.controller.startRecording(rmsListener, requestListener);
+    	}else{
+    		this.controller.stopRecording();
+    	}
     }
 
     protected AVSClientFactory getAVSClientFactory(DeviceConfig config) {
