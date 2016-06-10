@@ -2,6 +2,6 @@
 
 grammar start;
 
-<initiation_command> = alexa;
+<initiation_command> = (ale | al | a | exa | ex | axe | alek | alex | alexi | alexe | alexc | alec | ding | dong | alexa | elexa | elec);
 
 public <command> = <initiation_command>;

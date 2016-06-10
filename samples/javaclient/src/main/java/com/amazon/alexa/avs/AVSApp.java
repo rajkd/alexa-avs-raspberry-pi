@@ -26,10 +26,6 @@ public class AVSApp implements ExpectSpeechListener, RecordingRMSListener,
 
     private static final Logger log = LoggerFactory.getLogger(AVSApp.class);
 
-    //JB dirty hack, paramterize these settings
-    public static boolean DEV_MODE = false;
-
-
     private final AVSController controller;
     private Transcriber transcriber;
     private Thread autoEndpoint = null; // used to auto-endpoint while listening
@@ -62,14 +58,11 @@ public class AVSApp implements ExpectSpeechListener, RecordingRMSListener,
         controller = new AVSController(this, new AVSAudioPlayerFactory(), new AlertManagerFactory(),
                 getAVSClientFactory(deviceConfig), DialogRequestIdAuthority.getInstance());
 
-        //JB dirty hack, paramterize these settings
-        if (!DEV_MODE) {
-            authSetup = new AuthSetup(config, this);
-            authSetup.addAccessTokenListener(this);
-            authSetup.addAccessTokenListener(controller);
-            authSetup.startProvisioningThread();
-        }
-
+        authSetup = new AuthSetup(config, this);
+        authSetup.addAccessTokenListener(this);
+        authSetup.addAccessTokenListener(controller);
+        authSetup.startProvisioningThread();
+        
         controller.startHandlingDirectives();
 
         final TranscriberListener transcriberListener = this;

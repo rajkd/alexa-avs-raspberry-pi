@@ -82,8 +82,7 @@
   <component name="trivialPruner"
     type="edu.cmu.sphinx.decoder.pruner.SimplePruner"/>
 
-  <component name="trivialScorer"
-    type="edu.cmu.sphinx.decoder.scorer.SimpleAcousticScorer">
+  <component name="trivialScorer" type="edu.cmu.sphinx.decoder.scorer.SimpleAcousticScorer">
     <property name="frontend" value="liveFrontEnd"/>
   </component>
   
@@ -126,12 +125,12 @@
     <property name="unitManager" value="unitManager"/>
   </component>
 
-  <component name="acousticModelLoader"
-    type="edu.cmu.sphinx.linguist.acoustic.tiedstate.Sphinx3Loader">
-    <property name="unitManager" value="unitManager"/>
-    <property name="location" value=""/>
-    <property name="topGaussiansNum" value="4"/>
-  </component>
+  <component name="acousticModelLoader" type="edu.cmu.sphinx.linguist.acoustic.tiedstate.Sphinx3Loader">
+      <property name="unitManager" value="unitManager"/>
+      <property name="location" value="resource:/res/en-us/"/>
+      <property name="modelDefinition" value="mdef"/>
+      <property name="dataLocation" value="mdef_data/"/>
+  </component>  
 
   <component name="unitManager"
     type="edu.cmu.sphinx.linguist.acoustic.UnitManager"/>
@@ -152,61 +151,48 @@
     </propertylist>
   </component>
 
-  <component name="dataSource"
-    type="edu.cmu.sphinx.frontend.util.StreamDataSource"/>
+  <component name="dataSource" type="edu.cmu.sphinx.frontend.util.StreamDataSource"/>
 
   <component name="dataBlocker" type="edu.cmu.sphinx.frontend.DataBlocker"/>
 
   <component name="dataDumper" type="edu.cmu.sphinx.frontend.util.DataDumper"/>
 
-  <component name="speechClassifier"
-    type="edu.cmu.sphinx.frontend.endpoint.SpeechClassifier">
+  <component name="speechClassifier" type="edu.cmu.sphinx.frontend.endpoint.SpeechClassifier">
     <property name="threshold" value="13" />
   </component>
 
-  <component name="speechMarker"
-    type="edu.cmu.sphinx.frontend.endpoint.SpeechMarker" >
+  <component name="speechMarker" type="edu.cmu.sphinx.frontend.endpoint.SpeechMarker" >
   </component>
 
-  <component name="preemphasizer"
-    type="edu.cmu.sphinx.frontend.filter.Preemphasizer"/>
+  <component name="preemphasizer" type="edu.cmu.sphinx.frontend.filter.Preemphasizer"/>
 
-  <component name="windower"
-    type="edu.cmu.sphinx.frontend.window.RaisedCosineWindower">
+  <component name="windower" type="edu.cmu.sphinx.frontend.window.RaisedCosineWindower">
   </component>
 
-  <component name="fft"
-    type="edu.cmu.sphinx.frontend.transform.DiscreteFourierTransform">
+  <component name="fft" type="edu.cmu.sphinx.frontend.transform.DiscreteFourierTransform">
   </component>
 
-  <component name="autoCepstrum"
-    type="edu.cmu.sphinx.frontend.AutoCepstrum">
+  <component name="autoCepstrum" type="edu.cmu.sphinx.frontend.AutoCepstrum">
     <property name="loader" value="acousticModelLoader"/>
   </component>
 
-  <component name="batchCMN"
-    type="edu.cmu.sphinx.frontend.feature.BatchCMN"/>
+  <component name="batchCMN" type="edu.cmu.sphinx.frontend.feature.BatchCMN"/>
 
-  <component name="liveCMN"
-    type="edu.cmu.sphinx.frontend.feature.LiveCMN"/>
+  <component name="liveCMN" type="edu.cmu.sphinx.frontend.feature.LiveCMN"/>
 
-  <component name="featureExtraction"
-    type="edu.cmu.sphinx.frontend.feature.DeltasFeatureExtractor"/>
+  <component name="featureExtraction" type="edu.cmu.sphinx.frontend.feature.DeltasFeatureExtractor"/>
 
-  <component name="featureTransform"
-    type="edu.cmu.sphinx.frontend.feature.FeatureTransform">
+  <component name="featureTransform" type="edu.cmu.sphinx.frontend.feature.FeatureTransform">
     <property name="loader" value="acousticModelLoader"/>
   </component>
 
-  <component name="speedTracker"
-    type="edu.cmu.sphinx.instrumentation.SpeedTracker">
+  <component name="speedTracker" type="edu.cmu.sphinx.instrumentation.SpeedTracker">
     <property name="showTimers" value="true"/>
     <property name="frontend" value="liveFrontEnd"/>
     <property name="recognizer" value="recognizer"/>
   </component>
                                           
-  <component name="memoryTracker"
-    type="edu.cmu.sphinx.instrumentation.MemoryTracker">
+  <component name="memoryTracker" type="edu.cmu.sphinx.instrumentation.MemoryTracker">
     <property name="recognizer" value="recognizer"/>
   </component>
 

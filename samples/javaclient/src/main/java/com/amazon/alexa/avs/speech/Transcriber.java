@@ -17,7 +17,7 @@ public class Transcriber extends Thread {
     private static final String ACOUSTIC_MODEL = "resource:/res/en-us";
     private static final String DICTIONARY_PATH = "resource:/res/cmudict-en-us.dict";
     private static final String GRAMMAR_PATH = "resource:/res/dialog/";
-    private static final String LANGUAGE_MODEL = "resource:/res/en-us.lm";
+    private static final String LANGUAGE_MODEL = "resource:/res/en-us.lm.bin";
     private static final String GRAMMAR_NAME = "start";
     
 
