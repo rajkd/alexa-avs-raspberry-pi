@@ -85,6 +85,9 @@ public class AVSApp implements ExpectSpeechListener, RecordingRMSListener,
 	            @Override
 	            public void onRequestError(Throwable e) {
 	                log.error("An error occured creating speech request", e);
+	                try{
+	                	stopRecording();
+	                }catch(Exception ex){}
 	                finishProcessing();
 	            }
 	        };
